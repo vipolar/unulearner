@@ -9,5 +9,8 @@ sudo chmod -R o+w ./pgadmin
 sudo chown -R unulearner:unulearner ./postgresdb
 sudo chmod -R o+w ./postgresdb
 
+# Pull unulearner packages
+git clone https://github.com/vipolar/unulearner-frontend.git
+
 # Launch
 sudo docker compose up --build

@@ -1,3 +1,4 @@
-pgadmin
-postgresdb
-unulearner-frontend
+.env
+/pgadmin
+/postgresdb
+/unulearner-frontend
