@@ -1,0 +1,47 @@
+# Unulearner in all its glory!
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name ${NG_SERVER_NAME} www.${NG_SERVER_NAME};
+
+    # Frontend
+    location / {
+        proxy_pass http://unulearner_frontend_container:${NG_FE_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host ${NG_XSIGN}host;
+        proxy_set_header X-Real-IP ${NG_XSIGN}remote_addr;
+        proxy_set_header X-Forwarded-For ${NG_XSIGN}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${NG_XSIGN}scheme;
+        proxy_set_header Upgrade ${NG_XSIGN}http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Pgadmin4
+    location /pgadmin/ {
+        proxy_pass http://unulearner_pgadmin_container:${NG_PGA_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host ${NG_XSIGN}host;
+        proxy_set_header X-Script-Name /pgadmin;
+        proxy_set_header X-Real-IP ${NG_XSIGN}remote_addr;
+        proxy_set_header X-Forwarded-For ${NG_XSIGN}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${NG_XSIGN}scheme;
+    }
+
+    # Keycloak
+    location /auth/ {
+        proxy_pass http://unulearner_keycloak_container:${NG_KC_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host ${NG_XSIGN}host;
+        #proxy_set_header X-Script-Name /auth;
+        proxy_set_header X-Real-IP ${NG_XSIGN}remote_addr;
+        proxy_set_header X-Forwarded-For ${NG_XSIGN}proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto ${NG_XSIGN}scheme;
+    }
+
+    # You may need this to prevent return 404 recursion.
+    location = /404.html {
+        internal;
+    }
+}

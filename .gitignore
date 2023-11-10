@@ -1,4 +1,5 @@
 .env
+/nginx
 /pgadmin
 /postgresdb
 /unulearner-frontend
