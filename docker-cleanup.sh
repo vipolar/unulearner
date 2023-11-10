@@ -20,7 +20,7 @@ echo "Enter 'NUCLEAR' if you want to destroy everything associated with this doc
 read confirmation
 
 if [ "$confirmation" = "NUCLEAR" ]; then
-    sudo docker system prune -a -f #NUCLEAR OPTION!
+    sudo docker system prune -a -f --volumes #NUCLEAR OPTION!
 
     sudo rm -rf nginx
     sudo rm -rf pgadmin
