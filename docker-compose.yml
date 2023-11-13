@@ -5,6 +5,7 @@ services:
     container_name: unulearner_postgresdb_container
     image: postgres:${PG_VER}
     restart: unless-stopped
+    user: root
     environment:
       POSTGRES_MULTIPLE_DATABASES: ${PG_DB_LIST}
       POSTGRES_USER: ${PG_USER}
@@ -12,8 +13,9 @@ services:
       POSTGRES_HOST: ${PG_HOST}
       PGPORT: ${PG_PORT}
     volumes:
-      - './postgresdb/data:/var/lib/postgresql/data:rw'
       - './unulearner-resources/postgresdb/init-scripts:/docker-entrypoint-initdb.d:ro'
+      - './postgresdb/data:/var/lib/postgresql/data:rw'
+      - './postgresdb:/etc/postgresql:rw'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -q -d ${PG_DB_UL} -U ${PG_DB_UL} && pg_isready -q -d ${PG_DB_KC} -U ${PG_DB_KC}"]
       start_period: 160s
@@ -26,6 +28,17 @@ services:
           - postgresdb
     ports:
       - ${PG_PORT}:${PG_PORT}
+
+  # Service: 1.1
+  postgresdb_post:
+    image: postgres:${PG_VER}
+    user: root
+    volumes:
+      - './postgresdb/data:/var/lib/postgresql/data:rw'
+      - './postgresdb:/etc/postgresql:rw'
+    entrypoint: [ "bash", "-c", "chmod 750 -R /var/lib/postgresql/data && chmod 750 -R /etc/postgresql"] 
+    depends_on:
+        - postgresdb
 
   # Service: 2
   postgresadmin:
@@ -103,7 +116,7 @@ services:
     depends_on:
       - postgresdb
     volumes:
-      - './unulearner-frontend:/app/unulearner-frontend:ro'
+      - './unulearner-frontend:/app/unulearner-frontend:rw'
     build:
       context: ./unulearner-frontend
       dockerfile: Dockerfile.dev
@@ -149,10 +162,3 @@ networks:
   unulearner:
     name: unulearner
     driver: bridge
-
-#volumes:
-#  postgresdb:
-#  postgresadmin:
-#  angular-frontend:
-#  nginx-proxy:
-  

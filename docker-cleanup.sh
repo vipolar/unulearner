@@ -21,10 +21,6 @@ read confirmation
 
 if [ "$confirmation" = "NUCLEAR" ]; then
     sudo docker system prune -a -f --volumes #NUCLEAR OPTION!
-
-    sudo rm -rf nginx
-    sudo rm -rf pgadmin
-    sudo rm -rf postgresdb
 else
     echo "Would you like to remove dangling volumes? [y/N]: "
 
@@ -43,15 +39,15 @@ else
     if [ "$confirmation_lower" = "y" ]; then
         sudo docker volume rm $(docker volume ls -q)
     fi
+fi
 
-    echo "Would you like to remove the local directories associated with the docker volumes? [y/N]: "
+echo "Would you like to remove the local docker volumes? [y/N]: "
 
-    read confirmation
-    confirmation_lower=$(echo "$confirmation" | tr '[:upper:]' '[:lower:]')
+read confirmation
+confirmation_lower=$(echo "$confirmation" | tr '[:upper:]' '[:lower:]')
 
-    if [ "$confirmation_lower" = "y" ]; then
-        sudo rm -rf nginx
-        sudo rm -rf pgadmin
-        sudo rm -rf postgresdb
-    fi
+if [ "$confirmation_lower" = "y" ]; then
+    sudo rm -rf nginx
+    sudo rm -rf pgadmin
+    sudo rm -rf postgresdb
 fi
