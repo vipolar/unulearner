@@ -34,12 +34,38 @@ fi
 
 if [ -f ./unulearner-resources/nginx/conf.template/default.conf.template ]; then
     mkdir -p nginx/conf.d/
+    mkdir -p nginx/certbot/www
+    mkdir -p nginx/letsencrypt/live
+    mkdir -p nginx/letsencrypt/archive
+    mkdir -p nginx/letsencrypt/accounts
     sudo chmod -R o+w ./nginx
 
     envsubst < ./unulearner-resources/nginx/conf.template/default.conf.template > ./nginx/conf.d/default.conf
     echo "Success: nginx configuration ready!"
+
+    if [ -f ./unulearner-resources/nginx/healthcheck.sh ]; then
+        cp ./unulearner-resources/nginx/healthcheck.sh ./nginx
+        chmod +x ./nginx/healthcheck.sh 
+
+        echo "Success: nginx healthcheck script installed successfully!"
+    else
+        echo "ERROR: nginx healthcheck script not found!"
+    fi
 else
     echo "ABORTING: nginx configuration failed! (template file not found)"
+    exit
+fi
+
+if [ -f ./unulearner-resources/postgresdb/init-scripts/create-multiple-postgresql-databases.sh ]; then
+    mkdir -p postgresdb/data
+    mkdir -p postgresdb/config
+    mkdir -p postgresdb/scripts
+    sudo chmod -R o+w ./postgresdb
+
+    cp ./unulearner-resources/postgresdb/init-scripts/create-multiple-postgresql-databases.sh ./postgresdb/scripts
+    echo "Success: postgreSQL init script ready!"
+else
+    echo "ABORTING: postgreSQL init script not found!"
     exit
 fi
 
@@ -54,10 +80,6 @@ else
     exit
 fi
 
-# Create rest of the local directories
-mkdir -p postgresdb/data
-sudo chmod -R o+w ./postgresdb
-
 # Pull unulearner repositories
 if [ -d "$unulearner_frontend_path" ]; then
     echo "Folder '$unulearner_frontend_path' exists, meaning the repository has already been cloned locally!"
@@ -69,11 +91,19 @@ if [ -d "$unulearner_frontend_path" ]; then
     if [ "$confirmation_lower" = "y" ]; then
         rm -rf $unulearner_frontend_path
         git clone https://github.com/vipolar/unulearner-frontend.git
+        mkdir -p ./unulearner-frontend/.angular
+        sudo chmod -R o+w ./unulearner-frontend/.angular
+        mkdir -p ./unulearner-frontend/node_modules
+        sudo chmod -R o+w ./unulearner-frontend/node_modules
     else
         echo "Cloning repository skipped"
     fi
 else
     git clone https://github.com/vipolar/unulearner-frontend.git
+    mkdir -p ./unulearner-frontend/.angular
+    sudo chmod -R o+w ./unulearner-frontend/.angular
+    mkdir -p ./unulearner-frontend/node_modules
+    sudo chmod -R o+w ./unulearner-frontend/node_modules
 fi
 
 # Launch

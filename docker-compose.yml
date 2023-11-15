@@ -13,9 +13,9 @@ services:
       POSTGRES_HOST: ${PG_HOST}
       PGPORT: ${PG_PORT}
     volumes:
-      - './unulearner-resources/postgresdb/init-scripts:/docker-entrypoint-initdb.d:ro'
+      - './postgresdb/scripts:/docker-entrypoint-initdb.d:ro'
       - './postgresdb/data:/var/lib/postgresql/data:rw'
-      - './postgresdb:/etc/postgresql:rw'
+      - './postgresdb/config:/etc/postgresql:rw'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -q -d ${PG_DB_UL} -U ${PG_DB_UL} && pg_isready -q -d ${PG_DB_KC} -U ${PG_DB_KC}"]
       start_period: 160s
@@ -38,7 +38,11 @@ services:
       - './postgresdb:/etc/postgresql:rw'
     entrypoint: [ "bash", "-c", "chmod 750 -R /var/lib/postgresql/data && chmod 750 -R /etc/postgresql"] 
     depends_on:
-        - postgresdb
+      - postgresdb
+    networks:
+      unulearner:
+        aliases:
+          - postgresdbpost
 
   # Service: 2
   postgresadmin:
@@ -56,7 +60,7 @@ services:
       PGADMIN_DISABLE_POSTFIX: ${PGA_DISABLE_POSTFIX}
       PGADMIN_LISTEN_PORT: ${PGA_PORT}
     healthcheck:
-      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${PGA_PORT}/misc/ping"]
+      test: ["CMD-SHELL", "wget --quiet --spider --timeout=10 --tries=0 http://localhost:${PGA_PORT}/misc/ping"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -96,7 +100,7 @@ services:
       KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT}
       KC_HOSTNAME_STRICT_HTTPS: ${KC_HOSTNAME_STRICT_HTTPS}
     healthcheck:
-      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${KC_PORT}/health/ready"]
+      test: ["CMD-SHELL", "wget --quiet --spider --timeout=10 --tries=0 http://localhost:${KC_PORT}/health/ready"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -114,6 +118,7 @@ services:
     command: ["ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
     restart: unless-stopped
     depends_on:
+      - keycloak
       - postgresdb
     volumes:
       - './unulearner-frontend:/app/unulearner-frontend:rw'
@@ -123,7 +128,7 @@ services:
       context: ./unulearner-frontend
       dockerfile: Dockerfile.dev
     healthcheck:
-      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${FE_PORT}"]
+      test: ["CMD-SHELL", "wget --quiet --spider --timeout=10 --tries=0 http://localhost:${FE_PORT}"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -138,16 +143,31 @@ services:
   # Service: N
   nginx-proxy:
     container_name: unulearner_nginx_container
-    image: nginx:${NG_VER}
+    image: jonasal/nginx-certbot:${NG_VER}
     restart: unless-stopped
     depends_on:
+      - keycloak
       - postgresadmin
       - angular-frontend
     volumes:
-      - './nginx/conf.d/:/etc/nginx/conf.d/:ro'
-      # - ./certbot/www/:/var/www/certbot/:ro
+      - './nginx/letsencrypt:/etc/letsencrypt:rw'
+      - './nginx/certbot/www/:/var/www/certbot/:ro'
+      - './nginx/conf.d/:/etc/nginx/user_conf.d/:ro'
+      - './nginx/healthcheck.sh:/bin/healthcheck.sh:ro'
+    environment:
+      DEBUG: ${NG_DEBUG}
+      STAGING: ${NG_STAGING}
+      USE_ECDSA: ${NG_USE_ECDSA}
+      CERTBOT_EMAIL: ${NG_CERT_EMAIL}
+      USE_LOCAL_CA: ${NG_USE_LOCAL_CA}
+      DHPARAM_SIZE: ${NG_DHPARAM_SIZE}
+      RSA_KEY_SIZE: ${NG_RSA_KEY_SIZE}
+      ELLIPTIC_CURVE: ${NG_ELLIPTIC_CURVE}
+      RENEWAL_INTERVAL: ${NG_RENEWAL_INTERVAL}
+      CERTBOT_AUTHENTICATOR: ${NG_CERTBOT_AUTHENTICATOR}
+      CERTBOT_DNS_PROPAGATION_SECONDS: ${NG_CERTBOT_DNS_PROPAGATION_SECONDS}
     healthcheck:
-      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:80 && curl --head --max-time 10 --retry 0 -fsS http://localhost:443"]
+      test: ["CMD-SHELL", "/bin/healthcheck.sh"]
       start_period: 160s
       interval: 60s
       timeout: 10s
