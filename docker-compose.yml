@@ -56,7 +56,7 @@ services:
       PGADMIN_DISABLE_POSTFIX: ${PGA_DISABLE_POSTFIX}
       PGADMIN_LISTEN_PORT: ${PGA_PORT}
     healthcheck:
-      test: ["CMD-SHELL", "wget -O - http://localhost:${PGA_PORT}/misc/ping"]
+      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${PGA_PORT}/misc/ping"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -96,7 +96,7 @@ services:
       KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT}
       KC_HOSTNAME_STRICT_HTTPS: ${KC_HOSTNAME_STRICT_HTTPS}
     healthcheck:
-      test: ["CMD-SHELL", "curl --head -fsS http://localhost:${KC_PORT}/health/ready"]
+      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${KC_PORT}/health/ready"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -117,11 +117,13 @@ services:
       - postgresdb
     volumes:
       - './unulearner-frontend:/app/unulearner-frontend:rw'
+      - './unulearner-frontend/.angular:/app/unulearner-frontend/.angular:rw'
+      - './unulearner-frontend/node_modules:/app/unulearner-frontend/node_modules:rw'
     build:
       context: ./unulearner-frontend
       dockerfile: Dockerfile.dev
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider --quiet --tries=1 --timeout=10 http://localhost:${FE_PORT}"]
+      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:${FE_PORT}"]
       start_period: 160s
       interval: 60s
       timeout: 10s
@@ -145,7 +147,7 @@ services:
       - './nginx/conf.d/:/etc/nginx/conf.d/:ro'
       # - ./certbot/www/:/var/www/certbot/:ro
     healthcheck:
-      test: curl --fail http://localhost || exit 1
+      test: ["CMD-SHELL", "curl --head --max-time 10 --retry 0 -fsS http://localhost:80 && curl --head --max-time 10 --retry 0 -fsS http://localhost:443"]
       start_period: 160s
       interval: 60s
       timeout: 10s
