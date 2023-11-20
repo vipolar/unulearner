@@ -2,7 +2,7 @@ version: '3.8'
 services:
   # Service: 1
   postgresdb:
-    container_name: unulearner_postgresdb_container
+    container_name: ${PG_HOST}
     image: postgres:${PG_VER}
     restart: unless-stopped
     user: root
@@ -10,7 +10,7 @@ services:
       POSTGRES_MULTIPLE_DATABASES: ${PG_DB_LIST}
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASS}
-      POSTGRES_HOST: ${PG_HOST}
+      POSTGRES_HOST: ${PG_HOST_NAME}
       PGPORT: ${PG_PORT}
     volumes:
       - './postgresdb/scripts:/docker-entrypoint-initdb.d:ro'
@@ -35,7 +35,7 @@ services:
     user: root
     volumes:
       - './postgresdb/data:/var/lib/postgresql/data:rw'
-      - './postgresdb:/etc/postgresql:rw'
+      - './postgresdb/config:/etc/postgresql:rw'
     entrypoint: [ "bash", "-c", "chmod 750 -R /var/lib/postgresql/data && chmod 750 -R /etc/postgresql"] 
     depends_on:
       - postgresdb
@@ -46,7 +46,7 @@ services:
 
   # Service: 2
   postgresadmin:
-    container_name: unulearner_pgadmin_container
+    container_name: ${PGA_HOST}
     image: 'dpage/pgadmin4:${PGA_VER}'
     restart: unless-stopped
     depends_on:
@@ -74,7 +74,7 @@ services:
 
   # Service: 3
   keycloak:
-    container_name: unulearner_keycloak_container
+    container_name: ${KC_HOST}
     image: quay.io/keycloak/keycloak:${KC_VER}
     command: ["start-dev", "--http-port", "${KC_PORT}", "--proxy", "${KC_PROXY_MODE}"] #"--import-realm" #auto-build(lookitup)
     restart: unless-stopped
@@ -95,7 +95,7 @@ services:
       KC_PROXY: ${KC_PROXY_MODE}
       KC_HOSTNAME: ${KC_HOSTNAME}
       #KC_HOSTNAME_PORT: ${KC_PORT}
-      KC_HTTP_RELATIVE_PATH: ${KC_PATH}
+      KC_HTTP_RELATIVE_PATH: ${KC_CPATH}
       KC_HTTP_ENABLED: ${KC_HTTP_ENABLED}
       KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT}
       KC_HOSTNAME_STRICT_HTTPS: ${KC_HOSTNAME_STRICT_HTTPS}
@@ -112,21 +112,45 @@ services:
     ports:
       - ${KC_PORT}:${KC_PORT}
 
-  # Service: *
-  angular-frontend:
-    container_name: unulearner_frontend_container
-    command: ["ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
+  # Service: *backend (development!)
+  springboot-backend:
+    container_name: ${BE_HOST}
+    image: openjdk:17 # repo should be pulled, set up (ran at least once) and then and only then will this work!!!
+    entrypoint: [ "./mvnw", "spring-boot:run", "-Dmaven.repo.local=./.repository"]
+    working_dir: /application
     restart: unless-stopped
     depends_on:
       - keycloak
       - postgresdb
     volumes:
-      - './unulearner-frontend:/app/unulearner-frontend:rw'
-      - './unulearner-frontend/.angular:/app/unulearner-frontend/.angular:rw'
-      - './unulearner-frontend/node_modules:/app/unulearner-frontend/node_modules:rw'
-    build:
-      context: ./unulearner-frontend
-      dockerfile: Dockerfile.dev
+      - './unulearner-backend:/application:rw'
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider --timeout=10 --tries=0 http://localhost:${BE_PORT}"]
+      start_period: 160s
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    networks:
+      unulearner:
+        aliases:
+          - springboot
+    ports:
+      - ${BE_PORT}:${BE_PORT}
+
+  # Service: *frontend (development!)
+  angular-frontend:
+    container_name: ${FE_HOST}
+    image: node:18 # repo should be pulled, set up (npm install, npm install -g @angular/cli) and then and only then will this work!!!
+    entrypoint: [ "/application/node_modules/.bin/ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
+    working_dir: /application
+    restart: unless-stopped
+    depends_on:
+      - keycloak
+      - postgresdb
+    volumes:
+      - './unulearner-frontend:/application:rw'
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --spider --timeout=10 --tries=0 http://localhost:${FE_PORT}"]
       start_period: 160s
@@ -140,16 +164,18 @@ services:
     ports:
       - ${FE_PORT}:${FE_PORT}
 
-  # Service: N
+  # Service: 999
   nginx-proxy:
-    container_name: unulearner_nginx_container
+    container_name: ${NG_HOST}
     image: jonasal/nginx-certbot:${NG_VER}
     restart: unless-stopped
     depends_on:
       - keycloak
       - postgresadmin
       - angular-frontend
+      - springboot-backend
     volumes:
+      - './nginx/server/logs:/var/log/nginx:rw'
       - './nginx/letsencrypt:/etc/letsencrypt:rw'
       - './nginx/certbot/www/:/var/www/certbot/:ro'
       - './nginx/conf.d/:/etc/nginx/user_conf.d/:ro'

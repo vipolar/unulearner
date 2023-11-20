@@ -2,6 +2,7 @@
 
 script_file="./$(basename "${BASH_SOURCE[0]}")"
 unulearner_frontend_path="./unulearner-frontend"
+unulearner_backend_path="./unulearner-backend"
 
 if [ "$EUID" -eq 0 ]; then
     echo "ABORTING: script was invoked by a super user!"
@@ -35,6 +36,7 @@ fi
 if [ -f ./unulearner-resources/nginx/conf.template/default.conf.template ]; then
     mkdir -p nginx/conf.d/
     mkdir -p nginx/certbot/www
+    mkdir -p nginx/server/logs
     mkdir -p nginx/letsencrypt/live
     mkdir -p nginx/letsencrypt/archive
     mkdir -p nginx/letsencrypt/accounts
@@ -99,7 +101,7 @@ if [ -d "$unulearner_frontend_path" ]; then
         echo "Cloning repository skipped"
     fi
 else
-    git clone https://github.com/vipolar/unulearner-frontend.git
+    git clone https://github.com/vipolar/unulearner-frontend.git #DIRNAME
     mkdir -p ./unulearner-frontend/.angular
     sudo chmod -R o+w ./unulearner-frontend/.angular
     mkdir -p ./unulearner-frontend/node_modules
