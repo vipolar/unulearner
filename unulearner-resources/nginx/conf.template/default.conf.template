@@ -18,6 +18,9 @@ server {
     # Load the Diffie-Hellman parameter.
     ssl_dhparam /etc/letsencrypt/dhparams/dhparam.pem;
 
+    # Additional configuration.
+    client_max_body_size ${NG_UPLOAD_MAX_FILE_SIZE};
+
     # Frontend
     location ${NG_FE_CPATH} {
         proxy_pass http://${NG_FE_HOST}:${NG_FE_PORT};
