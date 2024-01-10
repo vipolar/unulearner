@@ -83,6 +83,27 @@ else
 fi
 
 # Pull unulearner repositories
+# Backend
+if [ -d "$unulearner_backend_path" ]; then
+    echo "Folder '$unulearner_backend_path' exists, meaning the repository has already been cloned locally!"
+    echo "Would you like remove the existing local repository and clone it again? [y/N]: "
+    
+    read confirmation
+    confirmation_lower=$(echo "$confirmation" | tr '[:upper:]' '[:lower:]')
+
+    if [ "$confirmation_lower" = "y" ]; then
+        rm -rf $unulearner_backend_path
+        git clone https://github.com/vipolar/unulearner-backend.git
+        sudo chmod -R o+w $unulearner_backend_path
+    else
+        echo "Cloning repository skipped"
+    fi
+else
+    git clone https://github.com/vipolar/unulearner-backend.git
+    sudo chmod -R o+w $unulearner_backend_path
+fi
+
+# Frontend
 if [ -d "$unulearner_frontend_path" ]; then
     echo "Folder '$unulearner_frontend_path' exists, meaning the repository has already been cloned locally!"
     echo "Would you like remove the existing local repository and clone it again? [y/N]: "
@@ -108,5 +129,5 @@ else
     sudo chmod -R o+w ./unulearner-frontend/node_modules
 fi
 
-# Launch
-sudo docker compose up --build
+# Build
+sudo docker compose build
