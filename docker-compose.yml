@@ -143,8 +143,8 @@ services:
   angular-frontend:
     container_name: ${FE_HOST}
     image: node:18
-    command: sh -c "npm install && npm install -g @angular/cli" #this should be run first, then disabled instead of the following line that is the actual entrypoint
-   #entrypoint: [ "/application/node_modules/.bin/ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
+    #command: sh -c "npm install && npm install -g @angular/cli" #this should be run first, then disabled instead of the following line that is the actual entrypoint
+    entrypoint: [ "/application/node_modules/.bin/ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
     working_dir: /application
     restart: unless-stopped
     depends_on:
