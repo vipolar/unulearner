@@ -29,21 +29,6 @@ services:
     ports:
       - ${PG_PORT}:${PG_PORT}
 
-  # Service: 1.1
-  postgresdb_post:
-    image: postgres:${PG_VER}
-    user: root
-    volumes:
-      - './postgresdb/data:/var/lib/postgresql/data:rw'
-      - './postgresdb/config:/etc/postgresql:rw'
-    entrypoint: [ "bash", "-c", "chmod 750 -R /var/lib/postgresql/data && chmod 750 -R /etc/postgresql"] 
-    depends_on:
-      - postgresdb
-    networks:
-      unulearner:
-        aliases:
-          - postgresdbpost
-
   # Service: 2
   postgresadmin:
     container_name: ${PGA_HOST}
@@ -76,12 +61,12 @@ services:
   keycloak:
     container_name: ${KC_HOST}
     image: quay.io/keycloak/keycloak:${KC_VER}
-    command: ["start-dev", "--http-port", "${KC_PORT}", "--proxy", "${KC_PROXY_MODE}"] #"--import-realm" #auto-build(lookitup)
+    command: ["start-dev", "--http-port", "${KC_PORT}", "--proxy", "${KC_PROXY_MODE}"] #, "--import-realm"] #auto-build(lookitup)
     restart: unless-stopped
     depends_on:
       - postgresdb
-    #volumes:
-     # - './keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro'
+    volumes:
+      - './keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro'
     environment:
       KC_DB: postgres
       KC_DB_USERNAME: ${PG_USER}

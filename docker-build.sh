@@ -82,6 +82,17 @@ else
     exit
 fi
 
+if [ -f ./unulearner-resources/keycloak/realm.json ]; then
+    mkdir -p keycloak
+    sudo chmod -R o+w ./keycloak
+
+    cp ./unulearner-resources/keycloak/realm.json ./keycloak
+    echo "Success: keycloak realm ready!"
+else
+    echo "ABORTING: keacloak realm.json not found!"
+    exit
+fi
+
 # Pull unulearner repositories
 # Backend
 if [ -d "$unulearner_backend_path" ]; then
@@ -95,12 +106,14 @@ if [ -d "$unulearner_backend_path" ]; then
         rm -rf $unulearner_backend_path
         git clone https://github.com/vipolar/unulearner-backend.git
         sudo chmod -R o+w $unulearner_backend_path
+        sudo chmod -R o+r $unulearner_backend_path
     else
         echo "Cloning repository skipped"
     fi
 else
     git clone https://github.com/vipolar/unulearner-backend.git
     sudo chmod -R o+w $unulearner_backend_path
+    sudo chmod -R o+r $unulearner_backend_path
 fi
 
 # Frontend
@@ -116,8 +129,10 @@ if [ -d "$unulearner_frontend_path" ]; then
         git clone https://github.com/vipolar/unulearner-frontend.git
         mkdir -p ./unulearner-frontend/.angular
         sudo chmod -R o+w ./unulearner-frontend/.angular
+        sudo chmod -R o+r ./unulearner-frontend/.angular
         mkdir -p ./unulearner-frontend/node_modules
         sudo chmod -R o+w ./unulearner-frontend/node_modules
+        sudo chmod -R o+r ./unulearner-frontend/node_modules
     else
         echo "Cloning repository skipped"
     fi
@@ -125,8 +140,10 @@ else
     git clone https://github.com/vipolar/unulearner-frontend.git #DIRNAME
     mkdir -p ./unulearner-frontend/.angular
     sudo chmod -R o+w ./unulearner-frontend/.angular
+    sudo chmod -R o+r ./unulearner-frontend/.angular
     mkdir -p ./unulearner-frontend/node_modules
     sudo chmod -R o+w ./unulearner-frontend/node_modules
+    sudo chmod -R o+r ./unulearner-frontend/node_modules
 fi
 
 # Build
