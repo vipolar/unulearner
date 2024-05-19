@@ -133,6 +133,8 @@ if [ -d "$unulearner_frontend_path" ]; then
         mkdir -p ./unulearner-frontend/node_modules
         sudo chmod -R o+w ./unulearner-frontend/node_modules
         sudo chmod -R o+r ./unulearner-frontend/node_modules
+        sudo chmod o+w ./unulearner-frontend
+        sudo chmod o+r ./unulearner-frontend
     else
         echo "Cloning repository skipped"
     fi
@@ -147,4 +149,5 @@ else
 fi
 
 # Build
-sudo docker compose build
+#sudo docker compose build
+#sudo docker compose up
