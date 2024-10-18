@@ -61,12 +61,13 @@ services:
   keycloak:
     container_name: ${KC_HOST}
     image: quay.io/keycloak/keycloak:${KC_VER}
-    command: ["start-dev", "--http-port", "${KC_PORT}", "--proxy", "${KC_PROXY_MODE}"] #, "--import-realm"] #auto-build(lookitup)
+    command: ["start-dev", "--http-port", "${KC_PORT}", "--proxy", "${KC_PROXY_MODE}", "--import-realm"] #auto-build(lookitup)
     restart: unless-stopped
     depends_on:
       - postgresdb
     volumes:
       - './keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro'
+      - './keycloak/providers:/opt/keycloak/providers/:ro'
     environment:
       KC_DB: postgres
       KC_DB_USERNAME: ${PG_USER}
@@ -130,6 +131,7 @@ services:
     image: node:18
     #command: sh -c "npm install && npm install -g @angular/cli" #this should be run first, then disabled instead of the following line that is the actual entrypoint
     entrypoint: [ "/application/node_modules/.bin/ng", "serve", "--host", "0.0.0.0", "--port", "${FE_PORT}", "--disable-host-check", "--proxy-config", "proxy.conf.json"]
+    #command: sh -c "tail -f /dev/null"  
     working_dir: /application
     restart: unless-stopped
     depends_on:

@@ -84,6 +84,8 @@ fi
 
 if [ -f ./unulearner-resources/keycloak/realm.json ]; then
     mkdir -p keycloak
+    mkdir -p keycloak/providers
+    #TODO: add script to download custom providers!
     sudo chmod -R o+w ./keycloak
 
     cp ./unulearner-resources/keycloak/realm.json ./keycloak
